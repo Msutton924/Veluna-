@@ -9,6 +9,19 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
+                
+                VStack {
+                    Text("Today's Steps")
+                        .font(.headline)
+                    ProgressView(value: Double(healthStore.stepCount), total: 10000)
+                        .padding()
+                    Text("\\(healthStore.stepCount) / 10,000 steps")
+                        .font(.subheadline)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(10)
+                
                 Text("Select Your Goal")
                     .font(.largeTitle)
 
