@@ -6,6 +6,7 @@ class HealthStore: ObservableObject {
 
     @Published var weight: Double = 0.0
     @Published var activeEnergy: Double = 0.0
+    @Published var stepCount: Int = 0
 
     init() {
         if HKHealthStore.isHealthDataAvailable() {
@@ -17,13 +18,15 @@ class HealthStore: ObservableObject {
     func requestAuthorization() {
         let toRead = Set([
             HKObjectType.quantityType(forIdentifier: .bodyMass)!,
-            HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!
+            HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!,
+            HKObjectType.quantityType(forIdentifier: .stepCount)!
         ])
 
         healthStore?.requestAuthorization(toShare: nil, read: toRead) { success, error in
             if success {
                 self.fetchWeight()
                 self.fetchActiveEnergy()
+                self.fetchStepCount()
             }
         }
     }
@@ -48,6 +51,23 @@ class HealthStore: ObservableObject {
             if let sum = result?.sumQuantity() {
                 DispatchQueue.main.async {
                     self.activeEnergy = sum.doubleValue(for: HKUnit.kilocalorie())
+                }
+            }
+        }
+        healthStore?.execute(query)
+    }
+
+    func fetchStepCount() {
+        guard let stepsType = HKSampleType.quantityType(forIdentifier: .stepCount) else { return }
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: Date())
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: Date(), options: .strictStartDate)
+
+        let query = HKStatisticsQuery(quantityType: stepsType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+            if let sum = result?.sumQuantity() {
+                DispatchQueue.main.async {
+                    self.stepCount = Int(sum.doubleValue(for: HKUnit.count()))
                 }
             }
         }
